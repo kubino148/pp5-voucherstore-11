@@ -1,0 +1,39 @@
+stages:
+  - linter
+  - build
+  - test
+  - deploy
+
+
+build:
+  stage: build
+  image:
+    name: maven
+  script:
+  - mvn -B test
+  only:
+    - master
+
+build:
+  stage: build
+  script:
+    - mvn compile
+
+test:
+  stage: test
+  image:
+    name: maven
+  script:
+    - mvn test
+
+variables:
+GITLAB_TOKEN: $GL_TOKEN
+
+deploy:
+  stage: deploy
+  image:
+    name: maven
+  script:
+    - mvn deploy
+  only:
+    - master
