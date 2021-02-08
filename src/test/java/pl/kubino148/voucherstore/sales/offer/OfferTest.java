@@ -1,55 +1,45 @@
 package pl.kubino148.voucherstore.sales.offer;
 
 import org.junit.Test;
-import pl.kubino148.voucherstore.sales.basket.BasketLine;
-import pl.kubino148.voucherstore.sales.product.ProductDetails;
+import pl.kubino148.voucherstore.sales.basket.BasketItem;
+import pl.kubino148.voucherstore.sales.productd.ProductDetails;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import static org.assertj.core.api.Assertions.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class OfferTest {
     @Test
-    public void itCalculateOfferBasedOnSingleBasketItem() {
-        List<BasketLine> basketItems = Collections.singletonList(
-                new BasketLine("prod2", 1)
+    public void itCreateOfferBasedOnBasketItems() {
+        List<BasketItem> basketItems = Arrays.asList(
+                new BasketItem("prod1", 2),
+                new BasketItem("prod2", 1)
         );
-
         OfferMaker offerMaker = thereIsOfferMaker();
-        Offer offer = offerMaker.calculateOffer(basketItems);
 
-        assertThat(offer.getTotal())
-                .isEqualTo(BigDecimal.valueOf(10));
-
-        assertThat(offer.getOfferLines())
-                .hasSize(1);
-    }
-
-    @Test
-    public void itCalculateOfferBasedOnBasketItems() {
-        List<BasketLine> basketItems = Arrays.asList(
-                new BasketLine("prod1", 2),
-                new BasketLine("prod2", 1)
-        );
-
-        OfferMaker offerMaker = thereIsOfferMaker();
         Offer offer = offerMaker.calculateOffer(basketItems);
 
         assertThat(offer.getTotal())
                 .isEqualTo(BigDecimal.valueOf(30));
+    }
 
-        assertThat(offer.getOfferLines())
-                .hasSize(2);
+    @Test
+    public void itCreateOfferBasedOnSingleBasketItems() {
+        List<BasketItem> basketItems = Collections.singletonList(
+                new BasketItem("prod2", 1)
+        );
+        OfferMaker offerMaker = thereIsOfferMaker();
+
+        Offer offer = offerMaker.calculateOffer(basketItems);
+
+        assertThat(offer.getTotal())
+                .isEqualTo(BigDecimal.valueOf(10));
     }
 
     private OfferMaker thereIsOfferMaker() {
-        return new OfferMaker(productId -> new ProductDetails(
-                productId,
-                String.format("%s-desc", productId),
-                BigDecimal.valueOf(10)
-        ));
+        return new OfferMaker(productId -> new ProductDetails(productId, String.format("%s-desc", productId), BigDecimal.valueOf(10)));
     }
 }

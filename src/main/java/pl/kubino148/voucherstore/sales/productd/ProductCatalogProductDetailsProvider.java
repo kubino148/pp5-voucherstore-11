@@ -1,10 +1,8 @@
-package pl.kubino148.voucherstore.sales.product;
+package pl.kubino148.voucherstore.sales.productd;
 
-import pl.kubino148.voucherstore.productcatalog.Product;
 import pl.kubino148.voucherstore.productcatalog.ProductCatalogFacade;
 
 public class ProductCatalogProductDetailsProvider implements ProductDetailsProvider {
-
     private final ProductCatalogFacade productCatalogFacade;
 
     public ProductCatalogProductDetailsProvider(ProductCatalogFacade productCatalogFacade) {
@@ -13,8 +11,11 @@ public class ProductCatalogProductDetailsProvider implements ProductDetailsProvi
 
     @Override
     public ProductDetails getByProductId(String productId) {
-        Product product = productCatalogFacade.getById(productId);
+        var product = productCatalogFacade.getById(productId);
 
-        return new ProductDetails(productId, product.getDescription(), product.getPrice());
+        return new ProductDetails(
+                product.getId(),
+                product.getDescription(),
+                product.getPrice());
     }
 }

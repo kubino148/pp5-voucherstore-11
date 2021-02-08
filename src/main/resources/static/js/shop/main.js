@@ -1,10 +1,11 @@
-const getProduct = () => {
+;
+const getProducts = () => {
     return fetch("/api/products")
-        .then(response => response.json())
-        .catch((error) => console.log(error))
+       .then((response) => response.json())
+       .catch((error) => console.log(error))
 }
 
-const createHtmlElementFromString = (template) => {
+const createHtmlElFromString = (template) => {
     let parent = document.createElement("div");
     parent.innerHTML = template.trim();
 
@@ -14,71 +15,59 @@ const createHtmlElementFromString = (template) => {
 const createProductComponent = (product) => {
     const template = `
         <li class="product">
-            <h3>${product.description}</h3>
+            <span class="product__description">${product.description}</span>
             <div class="product__image-container">
                 <img class="product__image" src="${product.picture}"/>
             </div>
             <span class="product__price">${product.price}</span>
             <button
                 class="product__add-to-basket"
-                data-product-id="${product.productId}"
+                data-product-id="${product.id}"
             >
                 Add to basket
             </button>
         </li>
     `;
 
-    return createHtmlElementFromString(template);
+    return createHtmlElFromString(template);
+}
+
+const initializeAddToBasketHandler = (el) => {
+    el.addEventListener('click', (e) => {
+        let button = e.target;
+        const productId = button.getAttribute('data-product-id');
+
+        handleAddToBasket(productId)
+            .then(() => refreshCurrentOffer())
+            .catch((error) => console.log(error))
+            ;
+    });
+
+    return el;
 }
 
 const handleAddToBasket = (productId) => {
-    console.log(`i am adding to basket prod with id: ${productId}`);
-
-    return fetch(`/api/add-product/${productId}`, {
-      method: 'POST',
-    })
-}
-
-const refreshBasketComponent = (offer) => {
-    document.querySelector('.basket__items-count-value')
-        .innerText = offer.productsCount;
-
-    document.querySelector('.basket__items-total-value')
-        .innerText = `${offer.total} PLN`;
-}
+    return fetch(`/api/basket/add/${productId}`, {
+      method: 'POST'
+    });
+};
 
 const refreshCurrentOffer = () => {
-    return fetch("/api/current-offer")
-        .then(response => response.json())
-        .then(offer => refreshBasketComponent(offer));
-}
-
-const initializeAddToBasketHandler = (element) => {
-    const button = element.querySelector('button.product__add-to-basket');
-
-    button.addEventListener('click', (event) => {
-        const productId = event.target.getAttribute('data-product-id');
-        handleAddToBasket(productId)
-            .then(() => refreshCurrentOffer())
-        ;
-    });
-
-    return element;
+    return fetch("api/current-offer")
+           .then((response) => response.json())
+           .then(data => console.log(data))
+           .catch((error) => console.log(error))
 }
 
 (() => {
-    const productsList = document.querySelector(".products");
-
-    getProduct()
+    const productsList = document.querySelector('#products');
+    getProducts()
         .then((products) => {
             products
-                .map(product => createProductComponent(product))
-                .map(liEl => initializeAddToBasketHandler(liEl))
-                .forEach(liEl => {
-                    productsList.appendChild(liEl);
+                .map(p => createProductComponent(p))
+                .map(productEl => initializeAddToBasketHandler(productEl))
+                .forEach(productEl => {
+                    productsList.appendChild(productEl)
                 })
-        });
-
-    refreshCurrentOffer()
-        .then(offer => refreshBasketComponent(offer));
+        })
 })();

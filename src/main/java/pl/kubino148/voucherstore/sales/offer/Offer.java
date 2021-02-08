@@ -1,33 +1,32 @@
 package pl.kubino148.voucherstore.sales.offer;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 
 public class Offer {
-    private final List<OrderLine> orderLines;
+    private final List<OrderLine> orderItems;
     private final BigDecimal total;
     private final Integer productsCount;
 
-    public Offer(List<OrderLine> orderLines, BigDecimal total) {
-        this.orderLines = orderLines;
+    public Offer(List<OrderLine> orderItems, BigDecimal total) {
+        this.orderItems = orderItems;
         this.total = total;
-        this.productsCount = orderLines.size();
+        this.productsCount = orderItems.size();
     }
 
     public BigDecimal getTotal() {
         return total;
     }
 
-    public List<OrderLine> getOfferLines() {
-        return Collections.unmodifiableList(orderLines);
-    }
-
-    public boolean isEqual(Offer currentOffer) {
-        return true;
+    public List<OrderLine> getOrderItems() {
+        return orderItems;
     }
 
     public Integer getProductsCount() {
         return productsCount;
+    }
+
+    public boolean isSameTotal(Offer seenOffer) {
+        return seenOffer.getTotal().equals(total);
     }
 }

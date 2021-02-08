@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class JdbcProductStorage implements ProductStorage {
+public class JdbcProductStorage implements ProductsStorage {
     public static final String INSERT_SQL = "INSERT INTO `products_catalog__products` " +
             "(`id`, `description`, `picture`, `price`) " +
             "values " +
@@ -32,7 +32,12 @@ public class JdbcProductStorage implements ProductStorage {
     }
 
     @Override
-    public Optional<Product> getById(String productId) {
+    public void clear() {
+        jdbcTemplate.update("Delete from `products_catalog__products`");
+    }
+
+    @Override
+    public Optional<Product> loadById(String productId) {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(SELECT_SINGLE_SQL, new Object[] {productId}, getProductRowMapper()));
         } catch (EmptyResultDataAccessException e) {
@@ -52,7 +57,7 @@ public class JdbcProductStorage implements ProductStorage {
     }
 
     @Override
-    public List<Product> allPublishedProducts() {
+    public List<Product> allPublished() {
         return jdbcTemplate.query(SELECT_PUBLISHED, getProductRowMapper());
     }
 }

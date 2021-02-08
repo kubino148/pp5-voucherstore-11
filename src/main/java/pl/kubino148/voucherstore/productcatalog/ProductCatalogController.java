@@ -1,6 +1,5 @@
 package pl.kubino148.voucherstore.productcatalog;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -9,12 +8,14 @@ import java.util.List;
 @RestController
 public class ProductCatalogController {
 
-    @Autowired
-    ProductCatalogFacade productCatalogFacade;
+    private final ProductCatalogFacade productCatalog;
 
+    public ProductCatalogController(ProductCatalogFacade productCatalog) {
+        this.productCatalog = productCatalog;
+    }
 
     @GetMapping("/api/products")
-    public List<Product> myProducts() {
-        return productCatalogFacade.allPublishedProducts();
+    public List<Product> listAllProducts() {
+        return productCatalog.getAvailableProducts();
     }
 }

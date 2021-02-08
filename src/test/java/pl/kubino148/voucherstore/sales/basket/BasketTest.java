@@ -6,20 +6,17 @@ import pl.kubino148.voucherstore.sales.Inventory;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 public class BasketTest {
 
     public static final String PRODUCT_1 = "lego-8297";
-    public static final String PRODUCT_2 = "lego-9999";
+    public static final String PRODUCT_2 = "lego-8298";
 
     @Test
     public void newlyCreateBasketIsEmpty() {
-        //Arrange
         Basket basket = Basket.empty();
-        //Act
-        //Assert
+
         assertThat(basket.isEmpty())
                 .isTrue();
     }
@@ -30,7 +27,8 @@ public class BasketTest {
         Basket basket = Basket.empty();
         Product product = thereIsProduct(PRODUCT_1);
         //Act
-        basket.add(product, thereIsAlwaysAvailableInventory());
+        basket.add(product, thereIsAllwaysExistingProductInventory());
+
         //Assert
         assertThat(basket.isEmpty())
                 .isFalse();
@@ -43,71 +41,76 @@ public class BasketTest {
         Product product1 = thereIsProduct(PRODUCT_1);
         Product product2 = thereIsProduct(PRODUCT_2);
         //Act
-        basket.add(product1, thereIsAlwaysAvailableInventory());
-        basket.add(product2, thereIsAlwaysAvailableInventory());
-        //Assert
-        assertThat(basket.isEmpty())
-                .isFalse();
+        basket.add(product1, thereIsAllwaysExistingProductInventory());
+        basket.add(product2, thereIsAllwaysExistingProductInventory());
 
-        assertThat(basket.getProductsCount())
+        //Assert
+        assertThat(basket.getProductsQuantities())
             .isEqualTo(2);
     }
 
     @Test
-    public void itIncrementQuantityWhenAddedTwice() {
+    public void itShowsSingleLineWhenSameProductsAddedTwice() {
         //Arrange
         Basket basket = Basket.empty();
         Product product1 = thereIsProduct(PRODUCT_1);
         //Act
-        basket.add(product1, thereIsAlwaysAvailableInventory());
-        basket.add(product1, thereIsAlwaysAvailableInventory());
+        basket.add(product1, thereIsAllwaysExistingProductInventory());
+        basket.add(product1, thereIsAllwaysExistingProductInventory());
 
-        assertThat(basket.getProductsCount())
+        //Assert
+        assertThat(basket.getProductsQuantities())
                 .isEqualTo(1);
 
         basketContainsProductWithQuantity(basket, product1, 2);
     }
 
     @Test
-    public void itStoreQuantityForMultipleProducts() {
+    public void itStoreQuantityOfMultipleProducts() {
         //Arrange
         Basket basket = Basket.empty();
         Product product1 = thereIsProduct(PRODUCT_1);
         Product product2 = thereIsProduct(PRODUCT_2);
         //Act
-        basket.add(product1, thereIsAlwaysAvailableInventory());
-        basket.add(product1, thereIsAlwaysAvailableInventory());
-        basket.add(product2, thereIsAlwaysAvailableInventory());
+        basket.add(product1, thereIsAllwaysExistingProductInventory());
+        basket.add(product1, thereIsAllwaysExistingProductInventory());
+        basket.add(product2, thereIsAllwaysExistingProductInventory());
+
+        //Assert
+        assertThat(basket.getProductsQuantities())
+                .isEqualTo(2);
 
         basketContainsProductWithQuantity(basket, product1, 2);
         basketContainsProductWithQuantity(basket, product2, 1);
     }
 
     @Test
-    public void itDennyToAddProductWith0Inventory() {
+    public void itDennyToAddProductWithInventoryStateOf0() {
         Basket basket = Basket.empty();
         Product product1 = thereIsProduct(PRODUCT_1);
 
         assertThatThrownBy(() -> basket.add(product1, (productId) -> false))
-                .hasMessage("There is not enough products available");
+                .hasMessage("Not enough products");
+
     }
 
-    private Inventory thereIsAlwaysAvailableInventory() {
+    private Inventory thereIsAllwaysExistingProductInventory() {
         return (productId -> true);
     }
 
     private void basketContainsProductWithQuantity(Basket basket, Product product1, int expectedQuantity) {
         assertThat(basket.getBasketItems())
-                .filteredOn(basketLine -> basketLine.getProductId().equals(product1.getId()))
-                .extracting(BasketLine::getQuantity)
-                .first()
-                .isEqualTo(expectedQuantity);
+            .filteredOn(basketItem -> basketItem.getProductId().equals(product1.getId()))
+            .extracting(BasketItem::getQuantity)
+            .first()
+            .isEqualTo(expectedQuantity)
+        ;
     }
 
-
     private Product thereIsProduct(String description) {
-        Product product = new Product(UUID.randomUUID());
+        var product = new Product(UUID.randomUUID());
         product.setDescription(description);
+
         return product;
     }
 }

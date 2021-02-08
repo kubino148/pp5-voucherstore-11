@@ -1,41 +1,38 @@
 package pl.kubino148.voucherstore.sales;
 
-import pl.kubino148.voucherstore.productcatalog.Product;
 import pl.kubino148.voucherstore.productcatalog.ProductCatalogConfiguration;
 import pl.kubino148.voucherstore.productcatalog.ProductCatalogFacade;
 import pl.kubino148.voucherstore.sales.basket.InMemoryBasketStorage;
 import pl.kubino148.voucherstore.sales.offer.OfferMaker;
-import pl.kubino148.voucherstore.sales.product.ProductDetails;
+import pl.kubino148.voucherstore.sales.ordering.InMemoryReservationRepository;
+import pl.kubino148.voucherstore.sales.ordering.ReservationRepository;
+import pl.kubino148.voucherstore.sales.payment.InMemoryPaymentGateway;
+import pl.kubino148.voucherstore.sales.payment.PaymentGateway;
+import pl.kubino148.voucherstore.sales.productd.ProductDetails;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 public class SalesTestCase {
 
-    ProductCatalogFacade productCatalog;
-    InMemoryBasketStorage basketStorage;
-    CurrentCustomerContext currentCustomerContext;
-    Inventory inventory;
-    String customerId;
-    OfferMaker offerMaker;
+    protected ProductCatalogFacade productCatalog;
+    protected InMemoryBasketStorage basketStorage;
+    protected Inventory alwaysExistsInventory;
+    protected CurrentCustomerContext currentCustomerContext;
+    protected String customerId;
+    protected OfferMaker offerMaker;
+    protected PaymentGateway paymentGateway;
+    protected ReservationRepository reservationRepository;
 
     protected CurrentCustomerContext thereIsCurrentCustomerContext() {
         return () -> customerId;
     }
 
-    protected Inventory therIsInventory() {
+    protected Inventory thereIsInventory() {
         return productId -> true;
     }
 
-    protected OfferMaker thereIsOfferMaker(ProductCatalogFacade productCatalogFacade) {
-        return new OfferMaker(productId -> {
-            Product product = productCatalogFacade.getById(productId);
-
-            return new ProductDetails(productId, product.getDescription(), product.getPrice());
-        });
-    }
-
-    protected InMemoryBasketStorage thereIsBasketStorage() {
+    protected InMemoryBasketStorage thereIsBasketStore() {
         return new InMemoryBasketStorage();
     }
 
@@ -43,25 +40,43 @@ public class SalesTestCase {
         return new ProductCatalogConfiguration().productCatalogFacade();
     }
 
-    protected String thereIsCustomerWhoIsDoingSomeShoping() {
-        customerId = UUID.randomUUID().toString();
-        return new String(customerId);
+    protected PaymentGateway thereIsInMemoryPaymentGateway() {
+        return new InMemoryPaymentGateway();
     }
 
     protected String thereIsProductAvailable() {
         var id = productCatalog.createProduct();
         productCatalog.applyPrice(id, BigDecimal.valueOf(10));
-        productCatalog.updateProductDetails(id, "desc", "http://image");
+        productCatalog.updateDetails(id, "lego", "http://picture");
+
         return id;
     }
 
     protected SalesFacade thereIsSalesModule() {
         return new SalesFacade(
-                productCatalog,
                 basketStorage,
+                productCatalog,
                 currentCustomerContext,
-                inventory,
-                offerMaker
+                alwaysExistsInventory,
+                offerMaker,
+                paymentGateway,
+                reservationRepository
         );
+    }
+
+    protected OfferMaker thereIsOfferMaker(ProductCatalogFacade productCatalogFacade) {
+        return new OfferMaker(productId -> {
+            var product = productCatalogFacade.getById(productId);
+
+            return new ProductDetails(product.getId(), product.getDescription(), product.getPrice());
+        });
+    }
+
+    protected String thereIsCustomerWhoIsDoingSomeShopping() {
+        return UUID.randomUUID().toString();
+    }
+
+    protected ReservationRepository thereIsInMemoryReservationRepository() {
+        return new InMemoryReservationRepository();
     }
 }

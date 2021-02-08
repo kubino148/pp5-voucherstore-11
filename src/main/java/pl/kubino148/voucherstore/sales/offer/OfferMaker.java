@@ -1,42 +1,42 @@
 package pl.kubino148.voucherstore.sales.offer;
 
-import pl.kubino148.voucherstore.sales.basket.BasketLine;
-import pl.kubino148.voucherstore.sales.product.ProductDetails;
-import pl.kubino148.voucherstore.sales.product.ProductDetailsProvider;
+import pl.kubino148.voucherstore.sales.basket.BasketItem;
+import pl.kubino148.voucherstore.sales.productd.ProductDetails;
+import pl.kubino148.voucherstore.sales.productd.ProductDetailsProvider;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class OfferMaker {
-    private final ProductDetailsProvider productDetailsProvider;
+
+    ProductDetailsProvider productDetailsProvider;
 
     public OfferMaker(ProductDetailsProvider productDetailsProvider) {
         this.productDetailsProvider = productDetailsProvider;
     }
 
-    public Offer calculateOffer(List<BasketLine> basketItems) {
-        List<OrderLine> orderLines = basketItems.stream()
+    public Offer calculateOffer(List<BasketItem> basketItems) {
+        List<OrderLine> orderItems = basketItems.stream()
                 .map(this::createOrderLine)
-                .collect(Collectors.toList());
+                .collect(Collectors.toUnmodifiableList());
 
-        return new Offer(orderLines, calculateTotal(orderLines));
+        return new Offer(orderItems, calculateTotal(orderItems));
     }
 
-    private OrderLine createOrderLine(BasketLine basketLine) {
-        ProductDetails details = productDetailsProvider.getByProductId(basketLine.getProductId());
+    private OrderLine createOrderLine(BasketItem basketItem) {
+        ProductDetails details = productDetailsProvider.getByProductId(basketItem.getProductId());
 
         return new OrderLine(
-                basketLine.getProductId(),
+                basketItem.getProductId(),
                 details.getDescription(),
                 details.getUnitPrice(),
-                basketLine.getQuantity()
-        );
+                basketItem.getQuantity());
     }
 
-    private BigDecimal calculateTotal(List<OrderLine> orderLines) {
-        return orderLines.stream()
-                .map(orderLine -> orderLine.getUnitPrice().multiply(BigDecimal.valueOf(orderLine.getQuantity())))
+    private BigDecimal calculateTotal(List<OrderLine> orderItems) {
+        return orderItems.stream()
+                .map(orderLine -> orderLine.getUnitPrice().multiply(new BigDecimal(orderLine.getQuantity())))
                 .reduce(BigDecimal::add)
                 .orElse(BigDecimal.ZERO);
     }

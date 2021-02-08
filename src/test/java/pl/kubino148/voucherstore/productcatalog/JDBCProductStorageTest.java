@@ -10,7 +10,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 @RunWith(SpringRunner.class)
@@ -35,11 +35,11 @@ public class JDBCProductStorageTest {
     @Test
     public void itAllowStoreProduct() {
         var product = ProductFixtures.draftProduct();
-        ProductStorage jdbcStorage = thereIsJDBCProductStorage();
+        ProductsStorage jdbcStorage = thereIsJDBCProductStorage();
 
         jdbcStorage.save(product);
 
-        assertThat(jdbcStorage.getById(product.getId()))
+        assertThat(jdbcStorage.loadById(product.getId()))
                 .isNotEmpty()
                 .map(product1 -> product.getId())
                 .contains(product.getId());
@@ -47,32 +47,31 @@ public class JDBCProductStorageTest {
 
     @Test
     public void thereIsEmptyWheNoProduct() {
-        ProductStorage jdbcStorage = thereIsJDBCProductStorage();
-        assertThat(jdbcStorage.getById("not_exists"))
+        ProductsStorage jdbcStorage = thereIsJDBCProductStorage();
+        assertThat(jdbcStorage.loadById("not_exists"))
                 .isEmpty();
     }
 
     @Test
     public void itAllowLoadAllProducts() {
         var p1 = ProductFixtures.readyToSellProduct("p1", 20.20);
-        var p2 = ProductFixtures.readyToSellProduct("p2", 20.20);
-        var p3 = ProductFixtures.draftProduct();
+        var p2 = ProductFixtures.draftProduct();
 
-        ProductStorage jdbcStorage = thereIsJDBCProductStorage();
+        ProductsStorage jdbcStorage = thereIsJDBCProductStorage();
 
         jdbcStorage.save(p1);
         jdbcStorage.save(p2);
 
-        List<Product> products = jdbcStorage.allPublishedProducts();
+        List<Product> products = jdbcStorage.allPublished();
 
         assertThat(products)
-                .hasSize(2)
+                .hasSize(1)
                 .extracting(Product::getId)
                 .contains(p1.getId())
-                .doesNotContain(p3.getId());
+                .doesNotContain(p2.getId());
     }
 
-    private ProductStorage thereIsJDBCProductStorage() {
+    private ProductsStorage thereIsJDBCProductStorage() {
         return new JdbcProductStorage(jdbcTemplate);
     }
 }

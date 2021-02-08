@@ -2,45 +2,52 @@ package pl.kubino148.voucherstore.sales;
 
 import org.junit.Before;
 import org.junit.Test;
+import pl.kubino148.payment.payu.exceptions.PayUException;
 import pl.kubino148.voucherstore.sales.offer.Offer;
-
+import pl.kubino148.voucherstore.sales.ordering.ReservationRepository;
+import pl.kubino148.voucherstore.sales.payment.PaymentDetails;
 import static org.assertj.core.api.Assertions.*;
 
 public class OrderingTest extends SalesTestCase {
+
     @Before
     public void setUp() {
         productCatalog = thereIsProductCatalog();
-        basketStorage = thereIsBasketStorage();
-        inventory = therIsInventory();
+        basketStorage = thereIsBasketStore();
+        alwaysExistsInventory = thereIsInventory();
         currentCustomerContext = thereIsCurrentCustomerContext();
         offerMaker = thereIsOfferMaker(productCatalog);
+        paymentGateway = thereIsInMemoryPaymentGateway();
+        reservationRepository = thereIsInMemoryReservationRepository();
     }
 
     @Test
-    public void itCreatesReservationBasedOnCurrentOffer() {
-
+    public void itCreateOrderBasedOnCurrentOffer() throws PayUException {
         //Arrange
-        SalesFacade salesFacade = thereIsSalesModule();
-        var productId1 = thereIsProductAvailable();
-        var productId2 = thereIsProductAvailable();
+        SalesFacade sales = thereIsSalesModule();
+        String productId1 = thereIsProductAvailable();
+        String productId2 = thereIsProductAvailable();
+        customerId = thereIsCustomerWhoIsDoingSomeShopping();
 
         //Act
-        var customerId1 = thereIsCustomerWhoIsDoingSomeShoping();
-        salesFacade.addProduct(productId1);
+        sales.addToBasket(productId1);
+        sales.addToBasket(productId2);
+        Offer seenOffer = sales.getCurrentOffer();
 
-        salesFacade.addProduct(productId2);
-        Offer seenOffer = salesFacade.getCurrentOffer();
+        PaymentDetails paymentDetails = sales.acceptOffer(new ClientDetails(), seenOffer);
 
-        String reservationId = salesFacade.acceptOffer(seenOffer, clientProvideHisData());
-
-        thereIsPendingReservationWithId(reservationId);
+        thereIsPendingReservationWithId(paymentDetails.getReservationId());
+        thereIsPaymentRegisteredForReservation(paymentDetails.getReservationId());
     }
 
-    private ClientData clientProvideHisData() {
-        return new ClientData();
+    private void thereIsPaymentRegisteredForReservation(String reservationId) {
+        var reservation = reservationRepository.loadById(reservationId).get();
+        assertThat(reservation.getPaymentId()).isNotNull();
     }
 
     private void thereIsPendingReservationWithId(String reservationId) {
-        assertThat(false).isFalse();
+        var reservation = reservationRepository.loadById(reservationId).get();
+        assertThat(reservation.isPending()).isTrue();
+        assertThat(reservation.isCompleated()).isFalse();
     }
 }

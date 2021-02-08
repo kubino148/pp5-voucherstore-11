@@ -2,18 +2,19 @@ package pl.kubino148.voucherstore.sales.basket;
 
 import pl.kubino148.voucherstore.productcatalog.Product;
 import pl.kubino148.voucherstore.sales.Inventory;
-import pl.kubino148.voucherstore.sales.exceptions.NotEnoughProductsException;
+import pl.kubino148.voucherstore.sales.exceptions.NotEnoughQuantityException;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Basket {
-    private final Map<String, Product> products;
-    private final Map<String, Integer> productsQuantities;
+    private final HashMap<String, Product> products;
+    private final HashMap<String, Integer> productsQuantities;
 
-    Basket() {
-        this.products = new HashMap<>();
-        this.productsQuantities = new HashMap<>();
+    public Basket() {
+        products = new HashMap<>();
+        productsQuantities = new HashMap<>();
     }
 
     public static Basket empty() {
@@ -24,28 +25,33 @@ public class Basket {
         return products.isEmpty();
     }
 
-    public int getProductsCount() {
+    public void add(Product product, Inventory inventory) {
+
+        if (!isAvailable(product.getProductID(), inventory)) {
+            throw new NotEnoughQuantityException();
+        }
+
+        if (!isInBasket(product)) {
+            putIntoBasket(product);
+        } else {
+            increaseProductQuantity(product);
+        }
+    }
+
+    private boolean isAvailable(String productId, Inventory inventory) {
+        return inventory.isAvailable(productId);
+    }
+
+    public int getProductsQuantities() {
         return products.size();
     }
 
-    public List<BasketLine> getBasketItems() {
+    public List<BasketItem> getBasketItems() {
         return productsQuantities
                 .entrySet()
                 .stream()
-                .map(es -> new BasketLine(es.getKey(), es.getValue()))
+                .map(es -> new BasketItem(es.getKey(), es.getValue()))
                 .collect(Collectors.toUnmodifiableList());
-    }
-
-    public void add(Product product, Inventory inventory) {
-        if (!inventory.isAvailable(product.getId())) {
-            throw new NotEnoughProductsException();
-        }
-
-        if (!isContains(product)) {
-            putIntoBasket(product);
-        } else {
-            increaseQuantity(product);
-        }
     }
 
     private void putIntoBasket(Product product) {
@@ -53,11 +59,11 @@ public class Basket {
         productsQuantities.put(product.getId(), 1);
     }
 
-    private void increaseQuantity(Product product) {
+    private void increaseProductQuantity(Product product) {
         productsQuantities.put(product.getId(), productsQuantities.get(product.getId()) + 1);
     }
 
-    private boolean isContains(Product product) {
+    private boolean isInBasket(Product product) {
         return productsQuantities.containsKey(product.getId());
     }
 }

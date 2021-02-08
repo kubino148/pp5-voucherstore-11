@@ -1,5 +1,6 @@
 package pl.kubino148.voucherstore.crm;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,12 +11,13 @@ import javax.persistence.Id;
 import javax.validation.constraints.NotNull;
 
 @Entity
-@Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Data
 public class Client {
     @Id
     @GeneratedValue
-    private Integer id;
+    private int id;
 
     private String firstname;
     private String lastname;

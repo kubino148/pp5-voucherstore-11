@@ -13,16 +13,16 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Product {
     @Id
-    private String productId;
+    private String productID;
     private String description;
     private String picture;
     private BigDecimal price;
 
     public Product(UUID productId) {
-        this.productId = productId.toString();
+        this.productID = productId.toString();
     }
 
     public String getId() {
-        return productId.toString();
+        return productID;
     }
 }

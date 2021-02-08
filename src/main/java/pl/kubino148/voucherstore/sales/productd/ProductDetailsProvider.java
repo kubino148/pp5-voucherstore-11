@@ -1,4 +1,4 @@
-package pl.kubino148.voucherstore.sales.product;
+package pl.kubino148.voucherstore.sales.productd;
 
 public interface ProductDetailsProvider {
     ProductDetails getByProductId(String productId);

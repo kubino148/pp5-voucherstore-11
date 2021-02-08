@@ -1,10 +1,10 @@
 package pl.kubino148.voucherstore.sales.basket;
 
-public class BasketLine {
+public class BasketItem {
     private String productId;
-    private Integer quantity;
+    private int quantity;
 
-    public BasketLine(String productId, Integer quantity) {
+    public BasketItem(String productId, int quantity) {
         this.productId = productId;
         this.quantity = quantity;
     }
@@ -13,7 +13,7 @@ public class BasketLine {
         return productId;
     }
 
-    public Integer getQuantity() {
+    public int getQuantity() {
         return quantity;
     }
 }

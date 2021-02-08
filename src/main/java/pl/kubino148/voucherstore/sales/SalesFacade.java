@@ -1,60 +1,79 @@
 package pl.kubino148.voucherstore.sales;
 
+import pl.kubino148.payment.payu.exceptions.PayUException;
 import pl.kubino148.voucherstore.productcatalog.Product;
 import pl.kubino148.voucherstore.productcatalog.ProductCatalogFacade;
 import pl.kubino148.voucherstore.sales.basket.Basket;
 import pl.kubino148.voucherstore.sales.basket.InMemoryBasketStorage;
 import pl.kubino148.voucherstore.sales.offer.Offer;
 import pl.kubino148.voucherstore.sales.offer.OfferMaker;
+import pl.kubino148.voucherstore.sales.ordering.Reservation;
+import pl.kubino148.voucherstore.sales.ordering.ReservationRepository;
+import pl.kubino148.voucherstore.sales.payment.PaymentDetails;
+import pl.kubino148.voucherstore.sales.payment.PaymentGateway;
+import pl.kubino148.voucherstore.sales.payment.PaymentUpdateStatusRequest;
+import pl.kubino148.voucherstore.sales.payment.UntrustedPaymentException;
 
 public class SalesFacade {
+    private final InMemoryBasketStorage basketStorage;
+    private final ProductCatalogFacade productCatalogFacade;
+    private final CurrentCustomerContext currentCustomerContext;
+    private final Inventory inventory;
+    private final OfferMaker offerMaker;
+    private final PaymentGateway paymentGateway;
+    private final ReservationRepository reservationRepository;
 
-    ProductCatalogFacade productCatalogFacade;
-    InMemoryBasketStorage basketStorage;
-    CurrentCustomerContext currentCustomerContext;
-    Inventory inventory;
-    OfferMaker offerMaker;
-
-    public SalesFacade(ProductCatalogFacade productCatalogFacade, InMemoryBasketStorage basketStorage, CurrentCustomerContext currentCustomerContext, Inventory inventory, OfferMaker offerMaker) {
-        this.productCatalogFacade = productCatalogFacade;
+    public SalesFacade(InMemoryBasketStorage basketStorage, ProductCatalogFacade productCatalogFacade, CurrentCustomerContext currentCustomerContext, Inventory inventory, OfferMaker offerMaker, PaymentGateway paymentGateway, ReservationRepository reservationRepository) {
         this.basketStorage = basketStorage;
+        this.productCatalogFacade = productCatalogFacade;
         this.currentCustomerContext = currentCustomerContext;
         this.inventory = inventory;
         this.offerMaker = offerMaker;
+        this.paymentGateway = paymentGateway;
+        this.reservationRepository = reservationRepository;
     }
 
-    public void addProduct(String productId1) {
+    public void addToBasket(String productId1) {
+        Basket basket = basketStorage.loadForCustomer(currentCustomerContext.getCustomerId())
+                .orElseGet(Basket::empty);
+
         Product product = productCatalogFacade.getById(productId1);
-        Basket basket = basketStorage.loadForCustomer(getCurrentCustomerId())
-                .orElse(Basket.empty());
 
         basket.add(product, inventory);
 
-        basketStorage.addForCustomer(getCurrentCustomerId(), basket);
-    }
-
-    private String getCurrentCustomerId() {
-        return currentCustomerContext.getCurrentCustomerId();
+        basketStorage.addForCustomer(currentCustomerContext.getCustomerId(), basket);
     }
 
     public Offer getCurrentOffer() {
-        Basket basket = basketStorage.loadForCustomer(getCurrentCustomerId())
-                .orElse(Basket.empty());
+        Basket basket = basketStorage.loadForCustomer(currentCustomerContext.getCustomerId())
+                .orElseGet(Basket::empty);
+
         return offerMaker.calculateOffer(basket.getBasketItems());
     }
 
-    public String acceptOffer(Offer seenOffer, ClientData clientData) {
-        Basket basket = basketStorage.loadForCustomer(getCurrentCustomerId())
-                .orElse(Basket.empty());
+    public PaymentDetails acceptOffer(ClientDetails clientDetails, Offer seenOffer) throws PayUException {
+        Basket basket = basketStorage.loadForCustomer(currentCustomerContext.getCustomerId())
+                .orElseGet(Basket::empty);
 
         Offer currentOffer = offerMaker.calculateOffer(basket.getBasketItems());
 
-        if (!seenOffer.isEqual(currentOffer)) {
+        if (!seenOffer.isSameTotal(currentOffer)) {
             throw new OfferChangedException();
         }
 
-        Reservation reservation = Reservation.of(currentOffer, clientData);
+        Reservation reservation = Reservation.of(currentOffer, clientDetails);
 
-        return reservation.getId();
+        var paymentDetails = paymentGateway.registerFor(reservation);
+        reservation.fillPaymentDetails(paymentDetails);
+
+        reservationRepository.save(reservation);
+
+        return paymentDetails;
+    }
+
+    public void handlePaymentStatusChange(PaymentUpdateStatusRequest updateStatusRequest) {
+        if (!paymentGateway.isTrusted(updateStatusRequest)) {
+            throw new UntrustedPaymentException();
+        }
     }
 }

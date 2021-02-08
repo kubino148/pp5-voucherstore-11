@@ -1,30 +1,28 @@
 package pl.kubino148.voucherstore.crm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @RestController
 public class ClientController {
 
     @Autowired
-    ClientRepository clientRepository;
+    ClientsRepository clientsRepository;
 
     @PostMapping("/api/clients")
     public void addClient(@Valid @RequestBody Client client) {
-        clientRepository.save(client);
+        clientsRepository.save(client);
     }
 
     @GetMapping("/api/clients")
-    public List<Client> clients() {
-        return clientRepository.findAll();
+    public Iterable<Client> clients() {
+        return clientsRepository.findAll();
     }
 
     @DeleteMapping("/api/clients/{id}")
-    public void deleteById(@Param("id") Integer id) {
-        clientRepository.deleteById(id);
+    public void delete(@PathVariable Integer id) {
+        clientsRepository.deleteById(id);
     }
 }

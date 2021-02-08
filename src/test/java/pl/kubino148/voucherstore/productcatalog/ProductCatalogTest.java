@@ -2,7 +2,6 @@ package pl.kubino148.voucherstore.productcatalog;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -10,64 +9,54 @@ import static org.assertj.core.api.Assertions.*;
 
 public class ProductCatalogTest {
 
-    public static final String MY_DESCRIPTION = "My Fancy Product";
-    public static final String MY_PICTURE = "http://my_image.jpeg";
+    public static final String MY_PRODUCT_DESC = "my fancy product";
+    public static final String MY_PRODUCT_PICTURE = "http://my_image.pl/image.jpeg";
 
     @Test
-    public void itAllowsCreateProduct() {
-        //Arrange
-        ProductCatalogFacade api = thereIsProductCatalog();
-        //Act
-        String productId = api.createProduct();
-        //Assert
-        Assert.assertTrue(api.isExists(productId));
+    public void itAllowCreateProduct() {
+        //A
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
+        //A
+        String productId = productCatalog.createProduct();
+        //A
+        Assert.assertTrue((productCatalog.getById(productId)).getId().equals(productId));
+        Assert.assertTrue(productCatalog.isExistsById(productId));
     }
 
     @Test
-    public void itAllowsLoadProduct() {
-        //Arrange
-        ProductCatalogFacade api = thereIsProductCatalog();
-        //Act
-        String productId = api.createProduct();
-        Product loaded = api.getById(productId);
-        //Assert
-        Assert.assertEquals(productId, loaded.getId());
+    public void itAllowSetProductDescription() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
+        String productId = productCatalog.createProduct();
+
+        productCatalog.updateDetails(productId, MY_PRODUCT_DESC, MY_PRODUCT_PICTURE);
+        Product loadedProduct = productCatalog.getById(productId);
+
+        Assert.assertEquals(MY_PRODUCT_DESC, loadedProduct.getDescription());
+        Assert.assertEquals(MY_PRODUCT_PICTURE, loadedProduct.getPicture());
     }
 
     @Test
-    public void itAllowToSetProductDetails() {
-        ProductCatalogFacade api = thereIsProductCatalog();
-        String productId = api.createProduct();
+    public void itAllowApplyPrice() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
+        String productId = productCatalog.createProduct();
 
-        api.updateProductDetails(productId, MY_DESCRIPTION, MY_PICTURE);
-        Product loaded = api.getById(productId);
+        productCatalog.applyPrice(productId, BigDecimal.valueOf(20.20));
+        Product loadedProduct = productCatalog.getById(productId);
 
-        Assert.assertEquals(MY_DESCRIPTION, loaded.getDescription());
-        Assert.assertEquals(MY_PICTURE, loaded.getPicture());
+        Assert.assertTrue(BigDecimal.valueOf(20.20).equals(loadedProduct.getPrice()));
     }
 
     @Test
-    public void itAllowToApplyPrice() {
-        ProductCatalogFacade api = thereIsProductCatalog();
-        String productId = api.createProduct();
+    public void itAllowsLoadAllProducts() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
+        String draftProductId = productCatalog.createProduct();
+        String productId = productCatalog.createProduct();
 
-        api.applyPrice(productId, BigDecimal.TEN);
-        Product loaded = api.getById(productId);
+        productCatalog.applyPrice(productId, BigDecimal.valueOf(20.20));
+        productCatalog.updateDetails(productId, MY_PRODUCT_DESC, MY_PRODUCT_PICTURE);
+        List<Product> all = productCatalog.getAvailableProducts();
 
-        Assert.assertEquals(BigDecimal.TEN, loaded.getPrice());
-    }
-
-    @Test
-    public void itAllowToListAllPublishedProducts() {
-        ProductCatalogFacade api = thereIsProductCatalog();
-        String draftProductId = api.createProduct();
-        String productId = api.createProduct();
-        api.updateProductDetails(productId, MY_DESCRIPTION, MY_PICTURE);
-        api.applyPrice(productId, BigDecimal.TEN);
-
-        List<Product> products = api.allPublishedProducts();
-
-        assertThat(products)
+        assertThat(all)
                 .hasSize(1)
                 .extracting(Product::getId)
                 .contains(productId)
@@ -75,35 +64,47 @@ public class ProductCatalogTest {
     }
 
     @Test
-    public void itDenyActionOnNotExistedProductV1() {
+    public void itDenyActionOnProductThatNotExistsV1() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
         try {
-            ProductCatalogFacade api = thereIsProductCatalog();
-            api.applyPrice("notExists", BigDecimal.valueOf(20));
-            Assert.fail("Should throw exception");
+            productCatalog.applyPrice("notExists", BigDecimal.TEN);
+            Assert.fail("should throw exception");
         } catch (ProductNotFoundException e) {
             Assert.assertTrue(true);
         }
     }
 
     @Test(expected = ProductNotFoundException.class)
-    public void itDenyActionOnNotExistedProductV2() {
-        ProductCatalogFacade api = thereIsProductCatalog();
-        api.applyPrice("notExists", BigDecimal.valueOf(20));
-        api.updateProductDetails("notExists", "desc", "img");
+    public void itDenyActionOnProductThatNotExistsV2() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
+        productCatalog.applyPrice("notExists", BigDecimal.TEN);
+        productCatalog.updateDetails("notExists", "desc", "picture");
     }
 
     @Test
-    public void itDenyActionOnNotExistedProductV3() {
-        ProductCatalogFacade api = thereIsProductCatalog();
+    public void itDenyActionOnProductThatNotExistsV3() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
 
-        assertThatThrownBy(() -> api.applyPrice("notExists", BigDecimal.valueOf(20)))
-                .hasMessage("There is no product with id: notExists");
+        assertThatThrownBy(() -> productCatalog.applyPrice("notExists", BigDecimal.TEN))
+                .hasMessage("There is no product with id: notExists")
+        ;
+    }
 
-        assertThatThrownBy(() -> api.updateProductDetails("notExists", "desc", "pic"))
-                .hasMessage("There is no product with id: notExists");
+    @Test
+    public void exceptionOnLoadingNotExisted() {
+        ProductCatalogFacade  productCatalog  = thereIsProductCatalog();
 
-        assertThatThrownBy(() -> api.getById("notExists"))
-                .hasMessage("There is no product with id: notExists");
+        assertThatThrownBy(() -> productCatalog.applyPrice("notExists", BigDecimal.TEN))
+                .hasMessage("There is no product with id: notExists")
+        ;
+
+        assertThatThrownBy(() -> productCatalog.getById("notExists"))
+                .hasMessage("There is no product with id: notExists")
+        ;
+
+        assertThatThrownBy(() -> productCatalog.updateDetails("notExists", "desc", "pic"))
+                .hasMessage("There is no product with id: notExists")
+        ;
     }
 
     private static ProductCatalogFacade thereIsProductCatalog() {

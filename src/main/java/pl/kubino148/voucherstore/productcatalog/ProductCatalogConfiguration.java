@@ -7,14 +7,13 @@ import org.springframework.context.annotation.Configuration;
 public class ProductCatalogConfiguration {
 
     public ProductCatalogFacade productCatalogFacade() {
-        return new ProductCatalogFacade(new HashMapProductStorage());
+        return new ProductCatalogFacade(new HashMapProductsStorage());
     }
 
-
     @Bean
-    public ProductCatalogFacade fixturesAwareProductCatalogFacade(ProductStorage productStorage) {
-        ProductCatalogFacade productCatalogFacade = new ProductCatalogFacade(productStorage);
+    public ProductCatalogFacade fixturesAwareProductCatalogFacade(ProductsStorage productsStorage) {
+        ProductCatalogFacade catalogFacade = new ProductCatalogFacade(productsStorage);
 
-        return productCatalogFacade;
+        return catalogFacade;
     }
 }

@@ -1,54 +1,61 @@
 package pl.kubino148.voucherstore.productcatalog;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 public class ProductCatalogFacade {
-    ProductStorage productStorage;
+    ProductsStorage productsStorage;
 
-    public ProductCatalogFacade(ProductStorage productStorage) {
-        this.productStorage = productStorage;
+    public ProductCatalogFacade(ProductsStorage productsStorage) {
+        this.productsStorage = productsStorage;
     }
 
     public String createProduct() {
         Product newProduct = new Product(UUID.randomUUID());
-        productStorage.save(newProduct);
+        productsStorage.save(newProduct);
 
         return newProduct.getId();
     }
 
-    public boolean isExists(String productId) {
-        return productStorage.getById(productId).isPresent();
+    public boolean isExistsById(String productId) {
+        return productsStorage.loadById(productId).isPresent();
     }
 
     public Product getById(String productId) {
         return getProductOrException(productId);
     }
 
-    public void updateProductDetails(String productId, String myDescription, String myPicture) {
-        Product product = getProductOrException(productId);
+    public void updateDetails(String productId, String productDesc, String productPicture) {
+        Product loaded = getProductOrException(productId);
 
-        product.setDescription(myDescription);
-        product.setPicture(myPicture);
+        loaded.setDescription(productDesc);
+        loaded.setPicture(productPicture);
 
-        productStorage.save(product);
+        productsStorage.save(loaded);
     }
 
-    public void applyPrice(String productId, BigDecimal price) {
-        Product product = getProductOrException(productId);
+    public void applyPrice(String productId, BigDecimal valueOf) {
+        Product loaded = getProductOrException(productId);
 
-        product.setPrice(price);
+        loaded.setPrice(valueOf);
 
-        productStorage.save(product);
+        productsStorage.save(loaded);
     }
 
-    public List<Product> allPublishedProducts() {
-        return productStorage.allPublishedProducts();
+    public List<Product> getAvailableProducts() {
+        return productsStorage.allPublished();
     }
 
     private Product getProductOrException(String productId) {
-        return productStorage.getById(productId)
+        return productsStorage.loadById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(String.format("There is no product with id: %s", productId)));
+    }
+
+    @Transactional
+    public void emptyCatalog() {
+        productsStorage.clear();
     }
 }
