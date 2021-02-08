@@ -33,6 +33,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/voucher-store-3211-1.0-SNAPSHOT.jar
+          asset_path: ./target/voucher-store-3212-1.0-SNAPSHOT.jar
           asset_name: application.jar
           asset_content_type: application/java-archive
